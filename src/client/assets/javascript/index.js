@@ -8,7 +8,7 @@ let store = {
 }
 
 // We need our javascript to wait until the DOM is loaded
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
 	onPageLoad()
 	setupClickHandlers()
 })
@@ -26,21 +26,26 @@ async function onPageLoad() {
 				const html = renderRacerCars(racers)
 				renderAt('#racers', html)
 			})
-	} catch(error) {
+	} catch (error) {
 		console.log("Problem getting tracks and racers ::", error.message)
 		console.error(error)
 	}
 }
 
 
-// Handle clicks
 function setupClickHandlers() {
 	document.addEventListener('click', function(event) {
 		const { target } = event
+
 		// Race track form field
-		// if (target.matches('.card.track')) {
-		// 	handleSelectTrack(target)
-		// }
+		if (target.matches('.card.track')) {
+			handleSelectTrack(target)
+		}
+
+		// Podracer form field
+		if (target.matches('.card.podracer')) {
+			handleSelectPodRacer(target)
+		}
 
 		// Submit create race form
 		if (target.matches('#submit-create-race')) {
@@ -52,7 +57,7 @@ function setupClickHandlers() {
 
 		// Handle acceleration click
 		if (target.matches('#gas-peddle')) {
-			handleAccelerate(target)
+			handleAccelerate()
 		}
 
 	}, false)
@@ -62,12 +67,34 @@ function setupClickHandlers() {
 async function delay(ms) {
 	try {
 		return await new Promise(resolve => setTimeout(resolve, ms));
-	} catch(error) {
+	} catch (error) {
 		console.log("an error shouldn't be possible here")
 		console.log(error)
 	}
 }
 // ^ PROVIDED CODE ^ DO NOT REMOVE
+
+// custom player or racer names
+const customRacerName = {
+	"Racer 1": "Mouse",
+	"Racer 2": "Hedgehog",
+	"Racer 3": "Tiger",
+	"Racer 4": "Cheetah",
+	"Racer 5": "Eagle",
+}
+
+// custom track names for the race
+const customTrackName = {
+	"Track 1": "Plitvice Lakes",
+	"Track 2": "Yellowstone",
+	"Track 3": "Glacier National Park",
+	"Track 4": "Belluno Dolomites",
+	"Track 5": "Wild Taiga",
+	"Track 6": "Ordesa",
+}
+
+// API CALLS ------------------------------------------------
+const SERVER = 'http://localhost:8000'
 
 // This async function controls the flow of the race, add the logic and error handling
 async function handleCreateRace() {
@@ -78,7 +105,7 @@ async function handleCreateRace() {
 		if (!player_id || !track_id) {
 			alert(`Please select a track and player to start the race`)
 			return
-		} else {			
+		} else {
 			const race = await createRace(player_id, track_id);
 			store.race_id = parseInt(race.ID) - 1;
 
@@ -91,8 +118,8 @@ async function handleCreateRace() {
 
 			await runRace(store.race_id);
 		}
-	} 
-	catch(error) {
+	}
+	catch (error) {
 		console.log(`Error in handleCreateRace function::`, error.message);
 		console.error(error);
 	}
@@ -104,20 +131,20 @@ async function runRace(raceID) {
 		return new Promise(resolve => {
 			const raceInterval = setInterval(async () => {
 				const raceResponse = await getRace(raceID);
-				if(raceResponse.status === "in-progress") {
+				if (raceResponse.status === "in-progress") {
 					renderAt('#leaderBoard', raceProgress(raceResponse.positions));
-				} else if(raceResponse.status === "finished") { 
+				} else if (raceResponse.status === "finished") {
 					// Stop the interval from repeating
-					clearInterval(raceInterval); 
+					clearInterval(raceInterval);
 					// Render the results view
-					renderAt('#race', resultsView(raceResponse.positions)); 
+					renderAt('#race', resultsView(raceResponse.positions));
 					// Resolve the promise
-					resolve(raceResponse); 
-				} 
-				
+					resolve(raceResponse);
+				}
+
 			}, 500)
 		})
-	} 
+	}
 	catch (error) {
 		console.log(`Error in runRace function::`, error.message);
 		console.error(error);
@@ -133,7 +160,7 @@ async function runCountdown() {
 		let timer = 3
 
 		return new Promise(resolve => {
-			const countdownInterval = setInterval(()=> {
+			const countdownInterval = setInterval(() => {
 				// run this DOM manipulation to decrement the countdown for the user
 				document.getElementById('big-numbers').innerHTML = --timer;
 				if (timer <= 0) {
@@ -141,9 +168,9 @@ async function runCountdown() {
 					resolve("done");
 					return;
 				}
-			},1000)
+			}, 1000)
 		})
-	} catch(error) {
+	} catch (error) {
 		console.log(`Error in runCountdown function::`, error.message);
 		console.error(error);
 	}
@@ -155,7 +182,7 @@ function handleSelectPodRacer(target) {
 
 	// remove class selected from all racer options
 	const selected = document.querySelector('#racers .selected')
-	if(selected) {
+	if (selected) {
 		selected.classList.remove('selected')
 	}
 
@@ -173,7 +200,7 @@ function handleSelectTrack(target) {
 
 	// remove class selected from all track options
 	const selected = document.querySelector('#tracks .selected')
-	if(selected) {
+	if (selected) {
 		selected.classList.remove('selected')
 	}
 
@@ -183,17 +210,17 @@ function handleSelectTrack(target) {
 	// convert string into number
 	store.track_id = parseInt(target.id);
 	//console.log(typeof store.track_id) // number
-	
+
 }
 
 // function to handle Accelerate button
 async function handleAccelerate() {
 	try {
 		await accelerate(store.race_id);
-	} catch(error) {
+	} catch (error) {
 		console.log(`Error in handleAccelerate function::`, error.message);
 		console.error(error);
-	} 
+	}
 }
 
 // HTML VIEWS ------------------------------------------------
@@ -215,29 +242,10 @@ function renderRacerCars(racers) {
 	`
 }
 
-// custom player or racer names
-const customRacerName = {
-	"Racer 1": "Mouse",
-	"Racer 2": "Hedgehog",
-	"Racer 3": "Tiger",
-	"Racer 4": "Cheetah",
-	"Racer 5": "Eagle",
-}
-
-// custom track names for the race
-const customTrackName = {
-    "Track 1": "Plitvice Lakes",
-    "Track 2": "Yellowstone",
-    "Track 3": "Glacier National Park",
-    "Track 4": "Belluno Dolomites",
-    "Track 5": "Wild Taiga",
-    "Track 6": "Ordesa",
-}
-
 // Handles the click event on a racer card.
 // Args:
 // 	racer: The racer object that was clicked.
-function onClickRacerCard(racer){
+function onClickRacerCard(racer) {
 	handleSelectPodRacer(racer);
 }
 
@@ -272,7 +280,7 @@ function renderTrackCards(tracks) {
 	`
 }
 
-function onclickTrackCard(track){
+function onclickTrackCard(track) {
 	handleSelectTrack(track)
 }
 
@@ -298,7 +306,7 @@ function renderCountdown(count) {
 // render race start view
 function renderRaceStartView(track, racers) {
 	return `
-		<header>
+		<header style="background-image: url('../assets/stylesheets/images/${customTrackName[track.name]}.jpg');">
 			<h1>Track: ${customTrackName[track.name]}</h1>
 		</header>
 		<main id="two-columns">
@@ -323,7 +331,7 @@ function resultsView(positions) {
 	const first = positions.filter(player => player.final_position === 1);
 	//console.log(first[0].driver_name);
 	//console.log(`${customRacerName[first[0].driver_name]}`);
-	
+
 	return `
 		<header class="header-wrap">
 			<h1>Race Results</h1>
@@ -349,12 +357,12 @@ function raceProgress(positions) {
 	// Get the progress or completion of players based on segment 
 	const trackProgress = positions.map(player => {
 		// segment 201 means the player had finished the race, so segment 201 is 100% of completion
-		const playerProgress = player.segment/201;
+		const playerProgress = player.segment / 201;
 		const playerPercentage = Math.round(playerProgress * 100);
 		//console.log(`Player segment: ${player.segment}, Progress: ${playerProgress}, Percentage: ${playerPercentage}%`)
-		
+
 		// cards to show graphic progress for players
-		if(player.id === store.player_id) {
+		if (player.id === store.player_id) {
 			return `
 			<div class="wrap-progress">
 				<div class="player-info">
@@ -379,14 +387,14 @@ function raceProgress(positions) {
 			</div>
 			`
 		}
-	}).join('');	
+	}).join('');
 
 	// cards to show positions list
 	positions = positions.sort((a, b) => (a.segment > b.segment) ? -1 : 1)
 	let count = 1
 
 	const results = positions.map(p => {
-		if(p.id === store.player_id) {
+		if (p.id === store.player_id) {
 			return `
 			<tr>
 				<td>
@@ -404,7 +412,7 @@ function raceProgress(positions) {
 		`
 		}
 
-	}).join('')	
+	}).join('')
 
 	return `
 		<main>
@@ -429,17 +437,12 @@ function renderAt(element, html) {
 
 // ^ Provided code ^ do not remove
 
-
-// API CALLS ------------------------------------------------
-
-const SERVER = 'http://localhost:8000'
-
 function defaultFetchOpts() {
 	return {
 		mode: 'cors',
 		headers: {
 			'Content-Type': 'application/json',
-			'Access-Control-Allow-Origin' : SERVER,
+			'Access-Control-Allow-Origin': SERVER,
 		},
 	}
 }
@@ -462,7 +465,7 @@ async function getTracks() {
 async function getRacers() {
 	try {
 		//http://localhost:8000/api/cars
-		const response =  await fetch(`${SERVER}/api/cars`); 		
+		const response = await fetch(`${SERVER}/api/cars`);
 		const data = await response.json();
 		return data; // return the data to use it later
 	}
@@ -479,7 +482,7 @@ async function createRace(player_id, track_id) {
 		player_id = parseInt(player_id)
 		track_id = parseInt(track_id)
 		const body = { player_id, track_id }
-		
+
 		const response = await fetch(`${SERVER}/api/races`, {
 			method: 'POST',
 			...defaultFetchOpts(),
@@ -514,11 +517,11 @@ async function startRace(id) {
 		method: 'POST',
 		...defaultFetchOpts(),
 	})
-	//.then(res => res.json())
-	.catch((error) => {
-		console.log("Problem with getRace request::", error.message);
-		console.log(error)
-	})
+		//.then(res => res.json())
+		.catch((error) => {
+			console.log("Problem with getRace request::", error.message);
+			console.log(error)
+		})
 }
 
 // POST request to `${SERVER}/api/races/${id}/accelerate`
@@ -529,8 +532,8 @@ async function accelerate(id) {
 		method: 'POST',
 		...defaultFetchOpts(),
 	})
-	.catch((error) => {
-		console.log(`Problem with accelerate request::`, error.message);
-		console.log(error)
-	})
+		.catch((error) => {
+			console.log(`Problem with accelerate request::`, error.message);
+			console.log(error)
+		})
 }
